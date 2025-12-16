@@ -1,5 +1,5 @@
 import React from 'react';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../container/HomeScreen';
 import DetailsScreen from '../container/DetailsScreen';
 import colors from '../config/colors';
@@ -15,6 +15,7 @@ const StackNavigator = () => {
           backgroundColor: colors.primary,
         },
         headerTintColor: colors.white,
+        headerTitleAlign: 'center',
         headerTitleStyle: {
           fontWeight: 'bold',
         },
