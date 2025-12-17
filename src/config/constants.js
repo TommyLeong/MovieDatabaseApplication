@@ -12,6 +12,7 @@ export const SORT_OPTIONS = [
   { label: 'By release date', value: 'release_date' },
 ];
 
+// !REQUIRED! YOUR ACCOUNT_ID! 
 // Temporary hardcoded account ID
 export const ACCOUNT_ID = 'useYOURaccountIDfromTMDBhere';
 

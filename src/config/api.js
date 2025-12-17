@@ -17,6 +17,8 @@ const API_CONFIG = {
     // Account endpoints
     account: {
       details: '/account/{account_id}',
+      watchlist: '/account/{account_id}/watchlist',
+      getWatchlistMovies: '/account/{account_id}/watchlist/movies',
     },
   },
 };

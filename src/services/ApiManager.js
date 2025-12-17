@@ -12,7 +12,7 @@ const addUrlParams = (url, params) => {
   });
 
   // Regex to replace the extra slash as empty string before query parameters
-  return urlObj.toString().replace(/\/(?=\?api_key)/, '');
+  return urlObj.toString().replace(/\/(?=\?)/, '');
 };
 
 const handleResponse = async (response) => {
@@ -106,7 +106,7 @@ export const get = async (url, params = {}) => {
   try {
     // Add URL parameters including API key
     const urlWithParams = addUrlParams(url, {
-      api_key: process.env.TMDB_API_KEY,
+      // api_key: process.env.TMDB_API_KEY,
       ...params,
     });
 
@@ -115,6 +115,8 @@ export const get = async (url, params = {}) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        // !REQUIRED!
+        'Authorization': `Bearer ${process.env.TMDB_API_KEY}`,
       },
     };
 
@@ -129,12 +131,23 @@ export const get = async (url, params = {}) => {
   }
 };
 
-// I'm aware this POST is 99% similar to GET, but kept separate for clarity and future modifications
+// TODO: FUTURE ENHANCEMENT
+/**
+ * Steps for future to support public user manage watch list.
+ * 1. Create request token 
+ * 2. Get user to approve request token via web URL (https://www.themoviedb.org/authenticate/<request_token>)
+ * 3. Get session ID from https://api.themoviedb.org/3/authentication/session/new?api_key=<api_key>
+ *        - neeed Authorization Bearer token?
+ * 4. Use returned session_id as parameter in add watch list POST request
+ */
+
 export const post = async (url, body = {}, params = {}) => {
   try {
     // Add URL parameters including API key
     const urlWithParams = addUrlParams(url, {
-      api_key: process.env.TMDB_API_KEY,
+      // api_key: process.env.TMDB_API_KEY,
+      // TODO: FUTURE ENHANCEMENT
+      // session_id: params.session_id,
       ...params,
     });
 
@@ -142,7 +155,10 @@ export const post = async (url, body = {}, params = {}) => {
     const requestOptions = {
       method: 'POST',
       headers: {
+        accept: 'application/json',
         'Content-Type': 'application/json',
+        // !REQUIRED!
+        'Authorization': `Bearer ${process.env.TMDB_API_KEY}`,
       },
       body: JSON.stringify(body),
     };
