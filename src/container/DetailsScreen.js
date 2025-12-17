@@ -6,8 +6,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
-  Dimensions,
+  ActivityIndicator
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import colors from '../config/colors';
@@ -423,6 +422,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     lineHeight: 20,
+    textAlign: 'justify',
   },
   watchlistButton: {
     flexDirection: 'row',

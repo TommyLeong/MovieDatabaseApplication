@@ -153,6 +153,7 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  // TODO: FUTURE ENHANCEMENT
   // Possibly for future enhancement, to validate search input length before enabling search
   const isSearchValid = () => {
     return (

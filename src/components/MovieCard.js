@@ -19,6 +19,7 @@ const MovieCard = ({ movie, onPress }) => {
     });
   };
 
+  // Default showing max 150 characters of overview
   const truncateText = (text, maxLength = 150) => {
     if (!text) return 'No overview available';
     if (text.length <= maxLength) return text;
