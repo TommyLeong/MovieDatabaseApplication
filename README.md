@@ -16,3 +16,8 @@ In order to run the project successfully, you will need to do the following
 - Update your ACCOUNT_ID at ./movieDatabaseApplication/src/config/constants.js 
 
 ** Look for `!REQUIRED!` keyword, so you'll know what's expected from your end to run the project successfully.
+
+# Imperfection place to enhance
+- Load more's content viewing
+- Dropdown sizes & iOS picker
+- UI design + Color palletes
