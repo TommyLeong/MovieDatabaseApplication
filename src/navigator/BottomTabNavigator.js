@@ -59,7 +59,10 @@ const BottomTabNavigator = () => {
       <Tab.Screen
         name="Watchlist"
         component={WatchlistScreen}
-        options={{ title: 'Watchlist' }}
+        options={{
+          title: 'Watchlist',
+          headerShown: false,
+        }}
       />
     </Tab.Navigator>
   );

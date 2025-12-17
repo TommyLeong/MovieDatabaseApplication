@@ -16,6 +16,13 @@ export const SORT_OPTIONS = [
 // Temporary hardcoded account ID
 export const ACCOUNT_ID = 'useYOURaccountIDfromTMDBhere';
 
+// Watchlist filter options
+export const WATCHLIST_FILTERS = [
+  { label: 'Alphabetical', value: 'alphabetical' },
+  { label: 'Rating', value: 'rating' },
+  { label: 'Release Date', value: 'release_date' },
+];
+
 // Local storage keys
 export const STORAGE_KEYS = {
   CATEGORY: 'movie_app_category',

@@ -4,7 +4,7 @@ import colors from '../config/colors';
 
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
-const MovieCard = ({ movie, onPress }) => {
+const MovieCard = ({ movie, onPress, showDeleteButton = false, onDelete }) => {
   const posterUrl = movie.poster_path
     ? `${TMDB_IMAGE_BASE_URL}${movie.poster_path}`
     : null;
@@ -68,6 +68,18 @@ const MovieCard = ({ movie, onPress }) => {
           </View>
         )}
       </View>
+
+      {showDeleteButton && onDelete && (
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={(e) => {
+            onDelete(movie);
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.deleteButtonText}>✕</Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 };
@@ -140,6 +152,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: colors.primary,
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  deleteButtonText: {
+    color: colors.white,
+    fontSize: 20,
+    fontWeight: 'bold',
+    lineHeight: 20,
   },
 });
 
