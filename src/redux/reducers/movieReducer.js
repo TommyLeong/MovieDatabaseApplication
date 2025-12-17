@@ -78,10 +78,21 @@ const movieReducer = (state = initialState, action) => {
       };
 
     case types.GET_NOW_PLAYING_MOVIES_SUCCESS:
+      const currentNowPlayingResults = state.nowPlayingMovies.data?.results || [];
+      const newNowPlayingResults = action.payload?.results || [];
+
+      // If page is 1, replace data; otherwise append results
+      const isNowPlayingFirstPage = action.payload?.page === 1;
+
       return {
         ...state,
         nowPlayingMovies: {
-          data: action.payload,
+          data: {
+            ...action.payload,
+            results: isNowPlayingFirstPage
+              ? newNowPlayingResults
+              : [...currentNowPlayingResults, ...newNowPlayingResults],
+          },
           loading: false,
           error: null,
         },
@@ -109,10 +120,21 @@ const movieReducer = (state = initialState, action) => {
       };
 
     case types.GET_POPULAR_MOVIES_SUCCESS:
+      const currentPopularResults = state.popularMovies.data?.results || [];
+      const newPopularResults = action.payload?.results || [];
+
+      // If page is 1, replace data; otherwise append results
+      const isPopularFirstPage = action.payload?.page === 1;
+
       return {
         ...state,
         popularMovies: {
-          data: action.payload,
+          data: {
+            ...action.payload,
+            results: isPopularFirstPage
+              ? newPopularResults
+              : [...currentPopularResults, ...newPopularResults],
+          },
           loading: false,
           error: null,
         },
@@ -140,10 +162,21 @@ const movieReducer = (state = initialState, action) => {
       };
 
     case types.GET_UPCOMING_MOVIES_SUCCESS:
+      const currentUpcomingResults = state.upcomingMovies.data?.results || [];
+      const newUpcomingResults = action.payload?.results || [];
+
+      // If page is 1, replace data; otherwise append results
+      const isUpcomingFirstPage = action.payload?.page === 1;
+
       return {
         ...state,
         upcomingMovies: {
-          data: action.payload,
+          data: {
+            ...action.payload,
+            results: isUpcomingFirstPage
+              ? newUpcomingResults
+              : [...currentUpcomingResults, ...newUpcomingResults],
+          },
           loading: false,
           error: null,
         },
