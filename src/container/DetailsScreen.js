@@ -7,17 +7,20 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
-  Dimensions,
+  Alert
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import colors from '../config/colors';
-import { ACCOUNT_ID } from '../config/constants';
 import {
   getMovieDetails,
   getMovieCredits,
   getMovieRecommendations,
-  addToWatchlist,
 } from '../redux/actions/movieActions';
+import {
+  isInWatchlist as checkIsInWatchlist,
+  addToWatchlist,
+  removeFromWatchlist
+} from '../services/WatchlistStorage';
 import { SvgXml } from 'react-native-svg';
 import svgs from '../config/svg';
 
@@ -30,14 +33,20 @@ const DetailsScreen = ({ route, navigation }) => {
   const movieDetails = useSelector((state) => state.movies.movieDetails);
   const movieCredits = useSelector((state) => state.movies.movieCredits);
   const movieRecommendations = useSelector((state) => state.movies.movieRecommendations);
-  const addToWatchlistState = useSelector((state) => state.movies.addToWatchlist);
 
   const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
 
   useEffect(() => {
-    dispatch(getMovieDetails(movieId));
-    dispatch(getMovieCredits(movieId));
-    dispatch(getMovieRecommendations(movieId));
+    const loadMovieData = async () => {
+      dispatch(getMovieDetails(movieId));
+      dispatch(getMovieCredits(movieId));
+      dispatch(getMovieRecommendations(movieId));
+      const inWatchlist = await checkIsInWatchlist(movieId);
+      setIsInWatchlist(inWatchlist);
+    };
+
+    loadMovieData();
   }, [movieId, dispatch]);
 
   useEffect(() => {
@@ -51,11 +60,30 @@ const DetailsScreen = ({ route, navigation }) => {
   const recommendations = movieRecommendations.data;
 
   const handleWatchlistToggle = async () => {
+    setWatchlistLoading(true);
     try {
-      await dispatch(addToWatchlist(ACCOUNT_ID, movieId, !isInWatchlist));
-      setIsInWatchlist(!isInWatchlist);
+      if (isInWatchlist) {
+        // Remove from watchlist
+        const success = await removeFromWatchlist(movieId);
+        if (success) {
+          setIsInWatchlist(false);
+          Alert.alert('Success', 'Movie removed from your watchlist');
+        }
+      } else {
+        // Add to watchlist
+        const success = await addToWatchlist(movie);
+        if (success) {
+          setIsInWatchlist(true);
+          Alert.alert('Success', 'Movie added to your watchlist');
+        } else {
+          Alert.alert('Info', 'Movie is already in your watchlist');
+        }
+      }
     } catch (error) {
       console.error('Error toggling watchlist:', error);
+      Alert.alert('Error', 'Failed to update watchlist');
+    } finally {
+      setWatchlistLoading(false);
     }
   };
 
@@ -102,28 +130,28 @@ const DetailsScreen = ({ route, navigation }) => {
     </View>
   );
 
-  const renderRecommendation = (movie) => (
+  const renderRecommendation = (recommendedMovie) => (
     <TouchableOpacity
-      key={movie.id}
+      key={recommendedMovie.id}
       style={styles.recommendationCard}
       onPress={() => {
-        navigation.push('Details', { movieId: movie.id });
+        navigation.push('Details', { movieId: recommendedMovie.id });
       }}
     >
       <Image
         source={
-          movie.poster_path
-            ? { uri: `${TMDB_IMAGE_BASE_URL}${movie.poster_path}` }
+          recommendedMovie.poster_path
+            ? { uri: `${TMDB_IMAGE_BASE_URL}${recommendedMovie.poster_path}` }
             : require('../assets/icons/tmbd-icon.png')
         }
         style={styles.recommendationImage}
       />
       <Text style={styles.recommendationTitle} numberOfLines={2}>
-        {movie.title}
+        {recommendedMovie.title}
       </Text>
-      {movie.vote_average > 0 && (
+      {recommendedMovie.vote_average > 0 && (
         <Text style={styles.recommendationRating}>
-          {Math.round(movie.vote_average * 10)}%
+          {Math.round(recommendedMovie.vote_average * 10)}%
         </Text>
       )}
     </TouchableOpacity>
@@ -229,15 +257,17 @@ const DetailsScreen = ({ route, navigation }) => {
 
       {/* Add To Watchlist Button */}
       <TouchableOpacity
-        style={styles.watchlistButton}
+        style={[
+          styles.watchlistButton,
+          isInWatchlist && styles.watchlistButtonActive
+        ]}
         onPress={handleWatchlistToggle}
-        disabled={addToWatchlistState.loading}
+        disabled={watchlistLoading}
       >
-        {addToWatchlistState.loading ? (
+        {watchlistLoading ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
           <>
-            {/* <Text style={styles.watchlistIcon}>🔖</Text> */}
             <SvgXml xml={svgs.watchlistIcon} width={24} height={24} fill={colors.white} />
             <Text style={styles.watchlistButtonText}>
               {isInWatchlist ? 'Remove from Watchlist' : 'Add To Watchlist'}
@@ -423,6 +453,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     lineHeight: 20,
+    textAlign: 'justify',
   },
   watchlistButton: {
     flexDirection: 'row',
@@ -437,6 +468,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  watchlistButtonActive: {
+    backgroundColor: 'rgba(0, 180, 228, 0.3)',
+    borderColor: colors.primary,
+  },
   watchlistIcon: {
     fontSize: 20,
     marginRight: 8,
@@ -445,6 +480,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
   },
   horizontalScroll: {
     marginTop: 8,

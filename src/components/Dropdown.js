@@ -29,6 +29,7 @@ const Dropdown = ({ label, selectedValue, onValueChange, items }) => {
 const styles = StyleSheet.create({
   container: {
     marginVertical: 8,
+    width: '100%',
   },
   label: {
     fontSize: 14,

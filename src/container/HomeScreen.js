@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,6 @@ import {
   CATEGORIES,
   SORT_OPTIONS,
   STORAGE_KEYS,
-  SEARCH_MIN_LENGTH,
   SEARCH_ALPHANUMERIC_REGEX,
 } from '../config/constants';
 import {
@@ -26,8 +25,6 @@ import {
 import { applySorting } from '../helper/sortHelper';
 import MovieCard from '../components/MovieCard';
 import Dropdown from '../components/Dropdown';
-
-const ITEMS_PER_PAGE = 5;
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -44,7 +41,10 @@ const HomeScreen = ({ navigation }) => {
   const [searchActive, setSearchActive] = useState(false);
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [filteredMovies, setFilteredMovies] = useState([]);
-  const [displayedCount, setDisplayedCount] = useState(ITEMS_PER_PAGE);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Ref for FlatList to control scrolling
+  const flatListRef = useRef(null);
 
   // Load persisted values from AsyncStorage
   useEffect(() => {
@@ -53,23 +53,23 @@ const HomeScreen = ({ navigation }) => {
 
   // Fetch movies when category changes
   const fetchMovies = useCallback(() => {
-    const page = 1;
+    // Reset to page 1 when category changes
+    setCurrentPage(1);
     switch (selectedCategory) {
       case 'now_playing':
-        dispatch(getNowPlayingMovies(page));
+        dispatch(getNowPlayingMovies(1));
         break;
       case 'popular':
-        dispatch(getPopularMovies(page));
+        dispatch(getPopularMovies(1));
         break;
       case 'upcoming':
-        dispatch(getUpcomingMovies(page));
+        dispatch(getUpcomingMovies(1));
         break;
       default:
-        dispatch(getNowPlayingMovies(page));
+        dispatch(getNowPlayingMovies(1));
     }
     setSearchActive(false);
     setActiveSearchQuery('');
-    setDisplayedCount(ITEMS_PER_PAGE);
   }, [selectedCategory, dispatch]);
 
   useEffect(() => {
@@ -77,7 +77,7 @@ const HomeScreen = ({ navigation }) => {
   }, [fetchMovies]);
 
   // Apply sorting and filtering when movies or sort/search changes
-  const applyFiltersAndSorting = useCallback(() => {
+  useEffect(() => {
     let movies = getCurrentMovies();
 
     // Apply search filter if search is active
@@ -91,11 +91,7 @@ const HomeScreen = ({ navigation }) => {
     movies = applySorting(movies, selectedSort);
 
     setFilteredMovies(movies);
-  }, [selectedCategory, selectedSort, searchActive, activeSearchQuery, nowPlayingMovies.data, popularMovies.data, upcomingMovies.data]);
-
-  useEffect(() => {
-    applyFiltersAndSorting();
-  }, [applyFiltersAndSorting]);
+  }, [selectedCategory, selectedSort, searchActive, activeSearchQuery, nowPlayingMovies.data, popularMovies.data, upcomingMovies.data, getCurrentMovies]);
 
   const loadPersistedValues = async () => {
     try {
@@ -127,7 +123,7 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const getCurrentMovies = () => {
+  const getCurrentMovies = useCallback(() => {
     switch (selectedCategory) {
       case 'now_playing':
         return nowPlayingMovies.data?.results || [];
@@ -138,7 +134,7 @@ const HomeScreen = ({ navigation }) => {
       default:
         return [];
     }
-  };
+  }, [selectedCategory, nowPlayingMovies.data, popularMovies.data, upcomingMovies.data]);
 
   const getCurrentLoading = () => {
     switch (selectedCategory) {
@@ -153,14 +149,6 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  // Possibly for future enhancement, to validate search input length before enabling search
-  const isSearchValid = () => {
-    return (
-      searchQuery.length >= SEARCH_MIN_LENGTH &&
-      SEARCH_ALPHANUMERIC_REGEX.test(searchQuery)
-    );
-  };
-
   const handleSearchChange = (text) => {
     // Only allow alphanumeric characters
     if (SEARCH_ALPHANUMERIC_REGEX.test(text) || text === '') {
@@ -172,7 +160,6 @@ const HomeScreen = ({ navigation }) => {
     // if (isSearchValid()) {
     setActiveSearchQuery(searchQuery);
     setSearchActive(true);
-    setDisplayedCount(ITEMS_PER_PAGE);
     // }
   };
 
@@ -181,12 +168,63 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleLoadMore = () => {
-    setDisplayedCount((prevCount) => prevCount + ITEMS_PER_PAGE);
+    // Store the current length to scroll to this position after new items load
+    const scrollToIndex = filteredMovies.length;
+
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+
+    // Fetch next page based on current category
+    const fetchPromise = (() => {
+      switch (selectedCategory) {
+        case 'now_playing':
+          return dispatch(getNowPlayingMovies(nextPage));
+        case 'popular':
+          return dispatch(getPopularMovies(nextPage));
+        case 'upcoming':
+          return dispatch(getUpcomingMovies(nextPage));
+        default:
+          return dispatch(getNowPlayingMovies(nextPage));
+      }
+    })();
+
+    // After data is loaded, scroll to the first new item after 100ms
+    fetchPromise.then(() => {
+      setTimeout(() => {
+        if (flatListRef.current && scrollToIndex > 0) {
+          flatListRef.current.scrollToIndex({
+            index: scrollToIndex,
+            animated: true,
+            viewPosition: 0,
+          });
+        }
+      }, 100);
+    }).catch(() => {
+      // TODO : if any error handling needed
+    });
+  };
+
+  const getCurrentData = () => {
+    switch (selectedCategory) {
+      case 'now_playing':
+        return nowPlayingMovies.data;
+      case 'popular':
+        return popularMovies.data;
+      case 'upcoming':
+        return upcomingMovies.data;
+      default:
+        return null;
+    }
   };
 
   const isLoading = getCurrentLoading();
-  const displayedMovies = filteredMovies.slice(0, displayedCount);
-  const hasMoreItems = displayedCount < filteredMovies.length;
+  const currentData = getCurrentData();
+  const totalPages = currentData?.total_pages || 0;
+  const hasMorePages = currentPage < totalPages;
+
+  // Only show full-screen loading on initial load (when no movies exist yet)
+  const isInitialLoading = isLoading && filteredMovies.length === 0;
+  const isLoadingMore = isLoading && filteredMovies.length > 0;
 
   return (
     <View style={styles.container}>
@@ -236,33 +274,49 @@ const HomeScreen = ({ navigation }) => {
       </View>
 
       {/* Movies List */}
-      {isLoading ? (
+      {isInitialLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading movies...</Text>
         </View>
       ) : (
         <FlatList
-          data={displayedMovies}
+          ref={flatListRef}
+          data={filteredMovies}
           renderItem={({ item }) => (
             <MovieCard movie={item} onPress={handleMoviePress} />
           )}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
+          onScrollToIndexFailed={(info) => {
+            // Fallback if scrollToIndex fails
+            const wait = new Promise(resolve => setTimeout(resolve, 500));
+            wait.then(() => {
+              flatListRef.current?.scrollToIndex({ index: info.index, animated: true, viewPosition: 0 });
+            });
+          }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No movies found</Text>
             </View>
           }
           ListFooterComponent={
-            hasMoreItems ? (
-              <TouchableOpacity
-                style={styles.loadMoreButton}
-                onPress={handleLoadMore}
-              >
-                <Text style={styles.loadMoreText}>LOAD MORE</Text>
-              </TouchableOpacity>
-            ) : null
+            <>
+              {isLoadingMore && (
+                <View style={styles.loadingMoreContainer}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={styles.loadingMoreText}>Loading more...</Text>
+                </View>
+              )}
+              {hasMorePages && !isLoadingMore && (
+                <TouchableOpacity
+                  style={styles.loadMoreButton}
+                  onPress={handleLoadMore}
+                >
+                  <Text style={styles.loadMoreText}>LOAD MORE</Text>
+                </TouchableOpacity>
+              )}
+            </>
           }
         />
       )}
@@ -359,6 +413,17 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingMoreContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  loadingMoreText: {
+    marginLeft: 12,
+    fontSize: 14,
+    color: colors.textGray,
   },
 });
 
