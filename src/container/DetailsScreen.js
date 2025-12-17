@@ -143,19 +143,6 @@ const DetailsScreen = ({ route, navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header Section */}
-      {/* <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {movie.title} ({new Date(movie.release_date).getFullYear()})
-        </Text>
-      </View> */}
-
       {/* Main Info Section */}
       <View style={styles.mainInfoSection}>
         {/* Poster */}

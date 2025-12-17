@@ -32,6 +32,9 @@ const StackNavigator = () => {
         component={DetailsScreen}
         options={{
           title: 'Movie Details',
+          headerTitleStyle: {
+            fontSize: 14,
+          },
         }}
       />
     </Stack.Navigator>
